@@ -1,0 +1,98 @@
+Imports System.CodeDom.Compiler
+Imports System.Text
+
+Public Class Form1
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
+        Dim ofd As New OpenFileDialog
+        ofd.ShowDialog()
+        TextBox1.Text = ofd.FileName
+    End Sub
+
+    Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click
+        Dim sfd As New SaveFileDialog
+        sfd.ShowDialog()
+
+        Dim key As String = TextBox2.Text 'set the var key 
+        Dim bytes() = IO.File.ReadAllBytes(TextBox1.Text) 'read the bytes from the path
+        Dim bytestr As String = Convert.ToBase64String(bytes) 'convert it to a "string" #base64code
+        Dim encrstr As String = PolyMorphicStairs.PolyCrypt(bytestr, TextBox2.Text) 'encrypts the string
+        Dim source = My.Resources.TextFile1
+        source = source.Replace("#+#+#+#+#", encrstr) 'replace #+ with the encrypted code
+        source = source.Replace("*Schlüseels*", TextBox2.Text) 'replace *Schlüseels* with the key
+        Compile(sfd.FileName, My.Resources.TextFile1)
+
+    End Sub
+    Public Class PolyMorphicStairs
+        Overloads Shared Function PolyCrypt(ByVal Data As String, ByVal Key As String, Optional ByVal ExtraRounds As UInteger = 0) As String
+            Dim buff() As Byte = PolyCrypt(Encoding.Default.GetBytes(Data), Encoding.Default.GetBytes(Key), ExtraRounds)
+            PolyCrypt = Encoding.Default.GetString(buff)
+            Erase buff
+        End Function
+        Overloads Shared Function PolyDeCrypt(ByVal Data As String, ByVal Key As String, Optional ByVal ExtraRounds As UInteger = 0) As String
+            Dim buff() As Byte = PolyDeCrypt(Encoding.Default.GetBytes(Data), Encoding.Default.GetBytes(Key), ExtraRounds)
+            PolyDeCrypt = Encoding.Default.GetString(buff)
+            Erase buff
+        End Function
+        Overloads Shared Function PolyCrypt(ByRef Data() As Byte, ByVal Key() As Byte, Optional ByVal ExtraRounds As UInteger = 0) As Byte()
+            Array.Resize(Data, Data.Length + 1)
+            Data(Data.Length - 1) = Convert.ToByte(New Random().Next(1, 255))
+            For i = (Data.Length - 1) * (ExtraRounds + 1) To 0 Step -1
+                Data(i Mod Data.Length) = CByte(CInt((Data(i Mod Data.Length)) + CInt(Data((i + 1) Mod Data.Length))) Mod 256) Xor Key(i Mod Key.Length)
+            Next
+            Return Data
+        End Function
+        Overloads Shared Function PolyDeCrypt(ByRef Data() As Byte, ByVal Key() As Byte, Optional ByVal ExtraRounds As UInteger = 0) As Byte()
+            For i = 0 To (Data.Length - 1) * (ExtraRounds + 1)
+                Data(i Mod Data.Length) = CByte((CInt(Data(i Mod Data.Length) Xor Key(i Mod Key.Length)) - CInt(Data((i + 1) Mod Data.Length)) + 256) Mod 256)
+            Next
+            Array.Resize(Data, Data.Length - 1)
+            Return Data
+        End Function
+    End Class
+#Region "Encryption and Comiling"
+
+    Private Function GenerateString(ByVal Lenght As Integer) 'Generates some random text
+        Dim Allowed As String = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890"
+        Dim ReturnString As String = ""
+        Dim Randumb As New Random
+        For i = 1 To Lenght
+            ReturnString &= Allowed.Chars(Randumb.Next(0, Allowed.Length - 1))
+        Next
+        Return ReturnString
+    End Function
+    Public Sub Compile(ByVal Output As String, ByVal Source As String) 'CodeDOM compiler by Pr3fix
+        On Error Resume Next
+
+        Dim Compiler As ICodeCompiler = (New VBCodeProvider).CreateCompiler()
+        Dim Parameters As New CompilerParameters()
+        Dim cResults As CompilerResults
+
+        Parameters.GenerateExecutable = True
+        Parameters.OutputAssembly = Output
+        Parameters.ReferencedAssemblies.Add("System.dll")
+        Parameters.ReferencedAssemblies.Add("System.Data.dll")
+        Parameters.ReferencedAssemblies.Add("System.Windows.Forms.dll")
+
+
+        Dim Version = New Dictionary(Of String, String)
+        Version.Add("CompilerVersion", "v2.0")
+
+        Dim ICO As String = IO.Path.GetTempPath & "\iCompiler.ico"
+
+
+        cResults = Compiler.CompileAssemblyFromSource(Parameters, Source)
+
+        If cResults.Errors.Count > 0 Then
+            For Each CompilerError In cResults.Errors
+                MessageBox.Show("Error: " & CompilerError.ErrorText, "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            Next
+        ElseIf cResults.Errors.Count = 0 Then
+
+        End If
+
+    End Sub
+#End Region
+    Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        TextBox2.Text = "Password"
+    End Sub
+End Class
